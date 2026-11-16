@@ -2,7 +2,6 @@ package com.example.lessiontpnl
 
 import com.example.lessiontpnl.data.device.SimulatedDeviceConnector
 import com.example.lessiontpnl.domain.model.ConnectionState
-import com.example.lessiontpnl.domain.model.DataSource
 import com.example.lessiontpnl.domain.model.MetricType
 import com.example.lessiontpnl.domain.model.MetricValue
 import kotlinx.coroutines.flow.first
@@ -42,15 +41,14 @@ class SimulatedDeviceConnectorTest {
     }
 
     @Test
-    fun `simulated connector emits muscle fatigue EMG records tagged as simulated source`() = runBlocking {
+    fun `muscle fatigue is never simulated as numeric data in simulated mode`() = runBlocking {
         val connector = SimulatedDeviceConnector()
         connector.connect()
 
         val receivedRecord = connector.measurementFlow.first { it.metricType == MetricType.MUSCLE_FATIGUE }
 
         assertEquals(MetricType.MUSCLE_FATIGUE, receivedRecord.metricType)
-        assertEquals(DataSource.SIMULATED, receivedRecord.source)
-        assertTrue(receivedRecord.value is MetricValue.MuscleFatigueEmg)
+        assertTrue(receivedRecord.value is MetricValue.MuscleFatigueUnavailable)
 
         connector.disconnect()
     }

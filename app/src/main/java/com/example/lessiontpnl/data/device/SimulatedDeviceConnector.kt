@@ -21,10 +21,10 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 /**
- * Fuente de datos simulados para pruebas y desarrollo.
- * Genera mediciones periódicas para Ritmo Cardíaco, Temperatura Corporal, Presión Arterial
- * y Activación Muscular EMG. Alimenta el mismo flujo de procesamiento y gráficos de caja y bigotes
- * que el dispositivo real, etiquetando los registros explícitamente como "Simulado".
+ * Fuente de datos simulados reproducible para pruebas y desarrollo.
+ * Simula conexión y emisión periódica de métricas para Ritmo Cardíaco, Temperatura Corporal y Presión Arterial.
+ * NUNCA simula ni genera valores numéricos para Fatiga Muscular (US 3 Tarea 3), manteniendo su estado en "Sin datos / No disponible"
+ * hasta contar con una fuente real válida (ESP32 BLE).
  */
 class SimulatedDeviceConnector(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default + Job())
@@ -92,16 +92,10 @@ class SimulatedDeviceConnector(
                     MetricValue.BloodPressure(systolic, diastolic)
                 )
 
-                // 4. Activación Muscular EMG simulada (Mismo flujo que el sensor real, marcado como Simulado)
-                val baseEmg = 600 + (stepCount % 15) * 120 + Random.nextInt(-50, 50)
-                val fatiguePercent = (baseEmg / 30).coerceIn(10, 95)
+                // 4. Fatiga Muscular: CUMPLIMIENTO US 3 TAREA 3 — EXPLICITAMENTE NO SIMULADA ("Sin datos / No disponible")
                 emitRecord(
                     MetricType.MUSCLE_FATIGUE,
-                    MetricValue.MuscleFatigueEmg(
-                        emgRaw = baseEmg,
-                        activationPercent = fatiguePercent,
-                        isDemoData = true
-                    )
+                    MetricValue.MuscleFatigueUnavailable()
                 )
 
                 delay(ProvisionalDataConfig.SIMULATION_INTERVAL_MS)

@@ -13,9 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
@@ -24,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -35,17 +37,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.lessiontpnl.domain.model.FatigueSession
 import com.example.lessiontpnl.domain.model.FatigueRiskThresholds
+import com.example.lessiontpnl.domain.model.FatigueSession
 
+/**
+ * Sección simplificada de registro de fatiga muscular (Mínima y Máxima) en tiempo real
+ * alimentada por las mediciones recibidas desde la placa ESP32 y el sensor EMG V3.
+ */
 @Composable
 fun SessionRecordingSection(
     session: FatigueSession,
@@ -58,13 +63,7 @@ fun SessionRecordingSection(
     modifier: Modifier = Modifier
 ) {
     var showConfirmResetDialog by remember { mutableStateOf(false) }
-    var activationInput by remember(riskThresholds) {
-        mutableStateOf(riskThresholds.activationPercent?.toString().orEmpty())
-    }
-    var emgInput by remember(riskThresholds) {
-        mutableStateOf(riskThresholds.emgRaw?.toString().orEmpty())
-    }
-    var thresholdInputError by remember { mutableStateOf<String?>(null) }
+    var showThresholdsDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -80,11 +79,13 @@ fun SessionRecordingSection(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Fila 1: Título de Sesión e Indicador de Grabación
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val compact = maxWidth < 480.dp
-                val title: @Composable () -> Unit = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+            // Encabezado: Título, Estado y Botón de Ajustes de Umbrales
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Timer,
                         contentDescription = null,
@@ -92,15 +93,14 @@ fun SessionRecordingSection(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Sesión de Registro de Fatiga",
+                        text = "Registro EMG V3 - Placa ESP32",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                }
 
-                val status: @Composable () -> Unit = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = if (session.isActive) Color(0xFF5C0003) else MaterialTheme.colorScheme.primaryContainer,
@@ -131,32 +131,24 @@ fun SessionRecordingSection(
                             )
                         }
                     }
-                }
 
-                if (compact) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        title()
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            status()
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        title()
-                        status()
+                    IconButton(onClick = { showThresholdsDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Configurar Umbrales",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Fila 2: Indicadores de Fatiga Extrema (Mínimo, Actual, Máximo)
+            // Tarjetas de Métricas de Fatiga (Mínima, Actual en Vivo, Máxima)
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                if (maxWidth < 480.dp) {
+                val isCompact = maxWidth < 480.dp
+                if (isCompact) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         ExtremesCard(
                             title = "Fatiga Mínima",
@@ -165,7 +157,7 @@ fun SessionRecordingSection(
                             modifier = Modifier.fillMaxWidth()
                         )
                         ExtremesCard(
-                            title = "Activación Actual",
+                            title = "Activación Actual (EMG V3)",
                             valueText = session.currentPercent?.let { "$it %" } ?: "N/D",
                             accentColor = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.fillMaxWidth()
@@ -186,7 +178,7 @@ fun SessionRecordingSection(
                             modifier = Modifier.weight(1f)
                         )
                         ExtremesCard(
-                            title = "Activación Actual",
+                            title = "Activación Actual (EMG V3)",
                             valueText = session.currentPercent?.let { "$it %" } ?: "N/D",
                             accentColor = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
@@ -201,104 +193,32 @@ fun SessionRecordingSection(
                 }
             }
 
-            Text(
-                text = "Origen: ${session.source?.label ?: "sin asignar"}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Umbrales de riesgo",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Deje un campo vacío para desactivar ese umbral. Se avisará cuando una medición supere el valor configurado.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
-            )
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val compact = maxWidth < 480.dp
-                if (compact) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = activationInput,
-                            onValueChange = { activationInput = it.filter(Char::isDigit) },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Fatiga (%)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        OutlinedTextField(
-                            value = emgInput,
-                            onValueChange = { emgInput = it.filter(Char::isDigit) },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Señal EMG (unidades del sensor)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                    }
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = activationInput,
-                            onValueChange = { activationInput = it.filter(Char::isDigit) },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("Fatiga (%)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                        OutlinedTextField(
-                            value = emgInput,
-                            onValueChange = { emgInput = it.filter(Char::isDigit) },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("Señal EMG (unidades del sensor)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-                    }
-                }
-            }
-            thresholdInputError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-            OutlinedButton(
-                onClick = {
-                    val activation = activationInput.toIntOrNull()
-                    val emg = emgInput.toIntOrNull()
-                    val invalidInput = (activationInput.isNotBlank() && activation == null) ||
-                        (emgInput.isNotBlank() && emg == null)
-                    val thresholds = FatigueRiskThresholds(
-                        activationPercent = activation,
-                        emgRaw = emg
-                    )
-                    val validationError = when {
-                        invalidInput -> "Ingrese valores numéricos válidos."
-                        else -> thresholds.validationError()
-                    }
-                    thresholdInputError = validationError
-                    if (validationError == null) onSaveRiskThresholds(thresholds)
-                },
-                modifier = Modifier.fillMaxWidth()
+            // Info de origen y lecturas
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Guardar umbrales")
+                Text(
+                    text = "Origen: Placa ESP32 | Sensor EMG V3",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Muestras: ${session.sampleCount}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Cantidad de muestras de la sesión
-            Text(
-                text = "Muestras registradas en la sesión: ${session.sampleCount}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Controles de Sesión: Iniciar / Finalizar / Reiniciar
+            // Botones Principales de Control: Iniciar / Detener / Reiniciar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -314,7 +234,7 @@ fun SessionRecordingSection(
                     ) {
                         Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Iniciar Sesión", fontWeight = FontWeight.Bold)
+                        Text(text = "Iniciar Registro ESP32 EMG V3", fontWeight = FontWeight.Bold)
                     }
                 } else {
                     Button(
@@ -327,7 +247,7 @@ fun SessionRecordingSection(
                     ) {
                         Icon(imageVector = Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Finalizar Sesión", fontWeight = FontWeight.Bold)
+                        Text(text = "Finalizar y Guardar Sesión", fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -341,11 +261,24 @@ fun SessionRecordingSection(
         }
     }
 
+    // Diálogo Modal Limpio para Configuración de Umbrales de Riesgo
+    if (showThresholdsDialog) {
+        ThresholdsDialog(
+            riskThresholds = riskThresholds,
+            onSave = { thresholds ->
+                onSaveRiskThresholds(thresholds)
+                showThresholdsDialog = false
+            },
+            onDismiss = { showThresholdsDialog = false }
+        )
+    }
+
+    // Diálogo Modal para Confirmar Reinicio
     if (showConfirmResetDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmResetDialog = false },
             title = { Text(text = "Confirmar Reinicio de Sesión", fontWeight = FontWeight.Bold) },
-            text = { Text(text = "¿Desea reiniciar la sesión actual de fatiga? Los valores mínimos y máximos registrados se restablecerán.") },
+            text = { Text(text = "¿Desea reiniciar los parámetros de fatiga registrados? Los valores Mínimo y Máximo se restablecerán para una nueva medición.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -379,22 +312,95 @@ private fun ExtremesCard(
         border = BorderStroke(1.dp, accentColor.copy(alpha = 0.4f))
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = title,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = valueText,
-                fontSize = 18.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = accentColor
             )
         }
     }
+}
+
+@Composable
+private fun ThresholdsDialog(
+    riskThresholds: FatigueRiskThresholds,
+    onSave: (FatigueRiskThresholds) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var activationInput by remember(riskThresholds) {
+        mutableStateOf(riskThresholds.activationPercent?.toString().orEmpty())
+    }
+    var emgInput by remember(riskThresholds) {
+        mutableStateOf(riskThresholds.emgRaw?.toString().orEmpty())
+    }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Configurar Umbrales de Riesgo", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Configure los límites de alerta para recibir una notificación cuando la señal EMG V3 o fatiga los supere.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = activationInput,
+                    onValueChange = { activationInput = it.filter(Char::isDigit) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Fatiga Máxima (%)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                OutlinedTextField(
+                    value = emgInput,
+                    onValueChange = { emgInput = it.filter(Char::isDigit) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Señal EMG Raw Máxima") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                errorMsg?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val activation = activationInput.toIntOrNull()
+                    val emg = emgInput.toIntOrNull()
+                    val thresholds = FatigueRiskThresholds(
+                        activationPercent = activation,
+                        emgRaw = emg
+                    )
+                    val validationError = thresholds.validationError()
+                    if (validationError != null) {
+                        errorMsg = validationError
+                    } else {
+                        onSave(thresholds)
+                    }
+                }
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

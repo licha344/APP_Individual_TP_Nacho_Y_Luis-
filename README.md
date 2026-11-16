@@ -1,5 +1,59 @@
 # LessionTPNL
 
+Aplicación Android para monitorear el estado físico y la fatiga durante el entrenamiento mediante sensores BLE y métricas en tiempo real. La app permite conectarse a un ESP32/EMG, visualizar indicadores de rendimiento, registrar sesiones, detectar riesgos de fatiga y exportar el historial para análisis posterior.
+
+## Descripción del proyecto
+
+LessionTPNL es una solución para seguimiento de esfuerzo físico que combina:
+
+- Conexión BLE con dispositivos compatibles para recibir señales del sensor EMG y otros datos de entrenamiento.
+- Simulación de datos para pruebas y demostración sin hardware físico.
+- Visualización de métricas clave: frecuencia cardiaca, temperatura corporal, presión arterial y activación muscular.
+- Registro de sesiones de esfuerzo con cálculo de mínimos, máximos y tendencias de fatiga.
+- Gráficos tipo box plot y de progreso temporal para analizar cambios durante la sesión.
+- Alertas de riesgo y configuración de umbrales personalizados.
+- Persistencia local del historial y exportación a CSV.
+
+La interfaz está construida con Kotlin y Jetpack Compose, usando Material 3 y StateFlow para reaccionar a cambios de estado en tiempo real.
+
+## Funcionalidades principales
+
+- Escaneo y conexión a dispositivos BLE.
+- Modo simulador para pruebas locales.
+- Mostrar métricas de rendimiento en pantalla.
+- Iniciar, pausar, detener y reiniciar sesiones.
+- Guardar historial persistente en almacenamiento interno.
+- Exportar datos a archivos CSV.
+- Evaluación visual de riesgo de fatiga muscular.
+
+## Stack tecnológico
+
+- Kotlin
+- Jetpack Compose
+- Material 3
+- Android Bluetooth GATT
+- Coroutines + Flow
+- Gradle/Kotlin DSL
+
+## Requisitos
+
+- Android Studio
+- JDK compatible con Gradle (configurado con el proyecto)
+- Android SDK 37
+- Dispositivo Android 8.0+ o emulador compatible
+
+## Cómo ejecutar
+
+```bash
+./gradlew test
+./gradlew assembleDebug
+```
+
+El APK generado quedará en la carpeta `app/build/outputs/apk/debug`.
+
+## Nota
+
+Esta aplicación está enfocada en apoyo a monitoreo de esfuerzo y fatiga; no reemplaza diagnóstico ni evaluación médica profesional.
 **Versión: 0.0.1**
 
 Aplicación Android para visualizar y registrar métricas físicas durante el entrenamiento. Recibe datos de un dispositivo ESP32 por Bluetooth Low Energy (BLE) o permite probar la interfaz con un simulador integrado.

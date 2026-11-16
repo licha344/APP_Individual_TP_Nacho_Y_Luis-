@@ -2,7 +2,6 @@ package com.example.lessiontpnl.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -14,25 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.BluetoothSearching
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.lessiontpnl.domain.model.ConnectionState
 import com.example.lessiontpnl.domain.model.ConnectorMode
 import com.example.lessiontpnl.ui.theme.NeonGlowBorder
@@ -80,13 +72,15 @@ fun ConnectionHeader(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Fila 1: Título y Selector de Modo (ESP32 BLE vs Modo Demo/Simulador)
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val compact = maxWidth < 500.dp
-                val titleAndStatus: @Composable () -> Unit = {
-                    Column {
+            // Fila 1: Título e Indicador de Estado de la Placa ESP32
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
-                        text = "Monitoreo Deportivo",
+                        text = "Monitoreo Deportivo con Sensores BLE",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -102,51 +96,30 @@ fun ConnectionHeader(
                         ) {}
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Estado: ${connectionState.label}",
+                            text = "Placa ESP32: ${connectionState.label}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = statusColor
                         )
                     }
                 }
-                }
-                val modeSelector: @Composable () -> Unit = {
-                    Row(
-                        modifier = if (compact) Modifier.horizontalScroll(rememberScrollState()) else Modifier,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ConnectorMode.entries.forEach { mode ->
-                            FilterChip(
-                                selected = (connectorMode == mode),
-                                onClick = { onSelectMode(mode) },
-                                label = { Text(text = mode.displayName, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                )
-                            )
-                        }
-                    }
-                }
 
-                if (compact) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        titleAndStatus()
-                        modeSelector()
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        titleAndStatus()
-                        modeSelector()
-                    }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        text = "Sensores Físicos",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
                 }
             }
 
-            // Alerta de estado de error o permisos requeridos
+            // Alertas de error o permisos
             if (connectionState is ConnectionState.Error || connectionState is ConnectionState.PermissionRequired || connectionState is ConnectionState.BluetoothDisabled) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Surface(
@@ -168,8 +141,8 @@ fun ConnectionHeader(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = when (connectionState) {
-                                is ConnectionState.PermissionRequired -> "Se requieren permisos de Bluetooth para buscar el ESP32; Android antiguo también puede solicitar ubicación."
-                                is ConnectionState.BluetoothDisabled -> "El adaptador Bluetooth está apagado. Enciéndalo para buscar sensores."
+                                is ConnectionState.PermissionRequired -> "Se requieren permisos de Bluetooth para buscar y conectar la placa ESP32."
+                                is ConnectionState.BluetoothDisabled -> "El adaptador Bluetooth está apagado. Enciéndalo para conectar los sensores."
                                 is ConnectionState.Error -> connectionState.message
                                 else -> ""
                             },
@@ -182,91 +155,57 @@ fun ConnectionHeader(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Botón de conexión directa a la Placa BLE
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val compact = maxWidth < 480.dp
                 Row(
-                    modifier = Modifier.fillMaxWidth().then(
-                        if (compact) Modifier.horizontalScroll(rememberScrollState()) else Modifier
-                    ),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                val isConnected = connectionState is ConnectionState.Connected
-                val isConnectingOrScanning = connectionState is ConnectionState.Connecting || connectionState is ConnectionState.Scanning
+                    val isConnected = connectionState is ConnectionState.Connected
+                    val isConnectingOrScanning = connectionState is ConnectionState.Connecting || connectionState is ConnectionState.Scanning
 
-                if (connectionState is ConnectionState.PermissionRequired) {
-                    Button(
-                        onClick = onRequestPermissions,
-                        modifier = if (compact) Modifier.widthIn(min = 200.dp) else Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(imageVector = Icons.Default.Bluetooth, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Conceder Permisos", fontWeight = FontWeight.Bold)
+                    if (connectionState is ConnectionState.PermissionRequired) {
+                        Button(
+                            onClick = onRequestPermissions,
+                            modifier = if (compact) Modifier.widthIn(min = 200.dp) else Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.Bluetooth, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Conceder Permisos Bluetooth", fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Button(
+                            onClick = onOpenScanner,
+                            modifier = if (compact) Modifier.widthIn(min = 200.dp) else Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isConnected) Color(0xFF00E676) else MaterialTheme.colorScheme.primary,
+                                contentColor = if (isConnected) Color(0xFF00202B) else MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.Bluetooth, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = when {
+                                    isConnectingOrScanning -> "Buscando Placa ESP32..."
+                                    isConnected -> "Placa Conectada (Cambiar)"
+                                    else -> "Buscar / Conectar Placa ESP32"
+                                },
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
-                } else if (connectorMode == ConnectorMode.ESP32_BLE) {
-                    Button(
-                        onClick = onOpenScanner,
-                        modifier = if (compact) Modifier.widthIn(min = 200.dp) else Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Icon(imageVector = Icons.Default.Bluetooth, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = if (isConnected) "Cambiar Dispositivo BLE" else "Buscar Dispositivos BLE", fontWeight = FontWeight.Bold)
-                    }
-                } else {
-                    Button(
-                        onClick = onToggleConnection,
-                        modifier = if (compact) Modifier.widthIn(min = 200.dp) else Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isConnected || isConnectingOrScanning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                            contentColor = if (isConnected || isConnectingOrScanning) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
-                        ),
-                        enabled = !isConnectingOrScanning
-                    ) {
-                        Text(
-                            text = when (connectionState) {
-                                is ConnectionState.Connected -> "Desconectar Demo"
-                                is ConnectionState.Connecting -> "Conectando..."
-                                else -> "Iniciar Modo Demo"
-                            },
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
 
-                if (connectorMode == ConnectorMode.SIMULATOR) {
-                    OutlinedButton(
-                        onClick = onTriggerError,
-                        enabled = isConnected,
-                        border = BorderStroke(1.dp, if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
-                    ) {
+                    IconButton(onClick = onShowTechnicalInfo) {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Simular Error",
-                            modifier = Modifier.size(16.dp),
-                            tint = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Probar Error",
-                            fontSize = 12.sp,
-                            color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Detalles Técnicos",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-
-                IconButton(onClick = onShowTechnicalInfo) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Detalles Técnicos",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
                 }
             }
         }
