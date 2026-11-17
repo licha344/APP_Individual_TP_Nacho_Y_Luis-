@@ -31,6 +31,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +45,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Componente gráfico interactivo para la evolución temporal de métricas.
+ * Soporta Ritmo Cardíaco (bpm), Temperatura Corporal (°C), Presión Arterial (serie doble Sistólica/Diastólica en mmHg)
+ * y métricas de activación/señal EMG V3.
+ */
 @Composable
 fun MetricGraph(
     selectedMetric: MetricType,
@@ -55,20 +61,29 @@ fun MetricGraph(
 ) {
     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
-    val numericPoints = records.mapNotNull { record ->
-        val yVal = when (val v = record.value) {
-            is MetricValue.HeartRate -> v.bpm.toDouble()
-            is MetricValue.BodyTemperature -> v.celsius
-            is MetricValue.BloodPressure -> v.systolic.toDouble()
-            is MetricValue.MuscleFatigueEmg -> v.activationPercent.toDouble()
-            else -> null
+    // Estructuras para trazado simple o doble (Presión Arterial)
+    val isBloodPressure = selectedMetric == MetricType.BLOOD_PRESSURE
+
+    val bpPoints = if (isBloodPressure) {
+        records.mapNotNull { record ->
+            val v = record.value as? MetricValue.BloodPressure ?: return@mapNotNull null
+            Triple(record.timestamp, v.systolic.toDouble(), v.diastolic.toDouble())
         }
-        if (yVal != null) {
-            record.timestamp to yVal
-        } else {
-            null
+    } else emptyList()
+
+    val singlePoints = if (!isBloodPressure) {
+        records.mapNotNull { record ->
+            val yVal = when (val v = record.value) {
+                is MetricValue.HeartRate -> v.bpm.toDouble()
+                is MetricValue.BodyTemperature -> v.celsius
+                is MetricValue.MuscleFatigueEmg -> v.activationPercent.toDouble()
+                is MetricValue.EmgRawValue -> v.rawValue.toDouble()
+                is MetricValue.EmgPeakValue -> v.peakMv
+                else -> null
+            }
+            if (yVal != null) record.timestamp to yVal else null
         }
-    }
+    } else emptyList()
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -84,7 +99,9 @@ fun MetricGraph(
         ) {
             // Título de la sección gráfica con estilo Neón
             Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -120,7 +137,7 @@ fun MetricGraph(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Selector de métrica (Chips Neón)
+            // Selector de métricas en Chips deslizables
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,7 +159,7 @@ fun MetricGraph(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Selector de Rango de Tiempo (Chips Neón)
+            // Selector de Rango de Tiempo
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -169,8 +186,10 @@ fun MetricGraph(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Lienzo del gráfico o Estado Vacío
-            if (numericPoints.isEmpty()) {
+            // Renderizado del Gráfico en Canvas o Estado Vacío
+            val hasData = if (isBloodPressure) bpPoints.isNotEmpty() else singlePoints.isNotEmpty()
+
+            if (!hasData) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
@@ -184,22 +203,110 @@ fun MetricGraph(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = if (selectedMetric == MetricType.MUSCLE_FATIGUE)
-                                "La métrica Fatiga Muscular no cuenta con datos simulados ni recibidos.\n(Sin datos suficientes para graficar)."
-                            else
-                                "No hay registros disponibles para ${selectedMetric.displayName} en el rango seleccionado.\nConecte el dispositivo para recibir mediciones.",
+                            text = "No hay mediciones registradas para ${selectedMetric.displayName} en el rango seleccionado.\nConecte el dispositivo o inicie la recepción para visualizar la curva.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
                 }
+            } else if (isBloodPressure) {
+                // GRAFICO DOBLE SERIE: PRESIÓN ARTERIAL (SISTÓLICA Y DIASTÓLICA)
+                val sysColor = Color(0xFFFF1744) // Rojo Neón Sistólica
+                val diaColor = Color(0xFF00E5FF) // Cian Neón Diastólica
+                val gridColor = Color(0xFF1E2A3A)
+
+                val allY = bpPoints.flatMap { listOf(it.second, it.third) }
+                val minY = (allY.minOrNull() ?: 60.0) * 0.9
+                val maxY = (allY.maxOrNull() ?: 140.0) * 1.1
+
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            LegendDot(color = sysColor, label = "Sistólica (mmHg)")
+                            LegendDot(color = diaColor, label = "Diastólica (mmHg)")
+                        }
+                        Text(
+                            text = "Escala: ${String.format(Locale.getDefault(), "%.0f-%.0f", minY, maxY)} mmHg",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                    ) {
+                        val width = size.width
+                        val height = size.height
+
+                        // Cuadrícula horizontal
+                        val steps = 3
+                        for (i in 0..steps) {
+                            val y = height * i / steps
+                            drawLine(
+                                color = gridColor,
+                                start = Offset(0f, y),
+                                end = Offset(width, y),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+
+                        fun valueToY(yVal: Double): Float {
+                            val norm = ((yVal - minY) / (maxY - minY)).toFloat()
+                            return height - (norm * height)
+                        }
+
+                        val sysOffsets = bpPoints.mapIndexed { idx, item ->
+                            val x = if (bpPoints.size == 1) width / 2f else (idx.toFloat() / (bpPoints.size - 1)) * width
+                            Offset(x, valueToY(item.second))
+                        }
+
+                        val diaOffsets = bpPoints.mapIndexed { idx, item ->
+                            val x = if (bpPoints.size == 1) width / 2f else (idx.toFloat() / (bpPoints.size - 1)) * width
+                            Offset(x, valueToY(item.third))
+                        }
+
+                        // Trazar Serie Sistólica
+                        drawSeries(pathColor = sysColor, points = sysOffsets)
+                        // Trazar Serie Diastólica
+                        drawSeries(pathColor = diaColor, points = diaOffsets)
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Eje X: Tiempos de inicio y fin
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = timeFormat.format(Date(bpPoints.first().first)),
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (bpPoints.size > 1) {
+                            Text(
+                                text = timeFormat.format(Date(bpPoints.last().first)),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             } else {
+                // GRAFICO SERIE SIMPLE (Ritmo Cardíaco, Temperatura Corporal, EMG)
                 val lineColor = MaterialTheme.colorScheme.primary
                 val gridColor = Color(0xFF1E2A3A)
 
-                val minY = (numericPoints.minOf { it.second } * 0.95).coerceAtLeast(0.0)
-                val maxY = (numericPoints.maxOf { it.second } * 1.05).coerceAtLeast(minY + 1.0)
+                val minY = (singlePoints.minOf { it.second } * 0.95).coerceAtLeast(0.0)
+                val maxY = (singlePoints.maxOf { it.second } * 1.05).coerceAtLeast(minY + 1.0)
 
                 Column {
                     Row(
@@ -230,7 +337,6 @@ fun MetricGraph(
                         val width = size.width
                         val height = size.height
 
-                        // Dibujar cuadrícula horizontal Neón
                         val steps = 3
                         for (i in 0..steps) {
                             val y = height * i / steps
@@ -242,71 +348,34 @@ fun MetricGraph(
                             )
                         }
 
-                        // Calcular coordenadas para cada punto de datos
-                        val points = if (numericPoints.size == 1) {
+                        val points = if (singlePoints.size == 1) {
                             listOf(Offset(width / 2f, height / 2f))
                         } else {
-                            numericPoints.mapIndexed { index, pair ->
-                                val x = (index.toFloat() / (numericPoints.size - 1)) * width
+                            singlePoints.mapIndexed { index, pair ->
+                                val x = (index.toFloat() / (singlePoints.size - 1)) * width
                                 val normalizedY = ((pair.second - minY) / (maxY - minY)).toFloat()
                                 val y = height - (normalizedY * height)
                                 Offset(x, y)
                             }
                         }
 
-                        // Trazar línea Neón resplandeciente
-                        if (points.size > 1) {
-                            val path = Path().apply {
-                                moveTo(points.first().x, points.first().y)
-                                for (i in 1 until points.size) {
-                                    lineTo(points[i].x, points[i].y)
-                                }
-                            }
-
-                            // Sombra exterior de brillo neón
-                            drawPath(
-                                path = path,
-                                color = lineColor.copy(alpha = 0.3f),
-                                style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                            // Trazo principal neón
-                            drawPath(
-                                path = path,
-                                color = lineColor,
-                                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
-
-                        // Dibujar puntos neón con núcleo blanco
-                        points.forEach { point ->
-                            drawCircle(
-                                color = lineColor,
-                                radius = 6.dp.toPx(),
-                                center = point
-                            )
-                            drawCircle(
-                                color = Color.White,
-                                radius = 2.5.dp.toPx(),
-                                center = point
-                            )
-                        }
+                        drawSeries(pathColor = lineColor, points = points)
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Eje X: Marcas de tiempo de inicio y fin
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = timeFormat.format(Date(numericPoints.first().first)),
+                            text = timeFormat.format(Date(singlePoints.first().first)),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (numericPoints.size > 1) {
+                        if (singlePoints.size > 1) {
                             Text(
-                                text = timeFormat.format(Date(numericPoints.last().first)),
+                                text = timeFormat.format(Date(singlePoints.last().first)),
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -315,5 +384,66 @@ fun MetricGraph(
                 }
             }
         }
+    }
+}
+
+private fun DrawScope.drawSeries(
+    pathColor: Color,
+    points: List<Offset>
+) {
+    if (points.isEmpty()) return
+
+    if (points.size > 1) {
+        val path = Path().apply {
+            moveTo(points.first().x, points.first().y)
+            for (i in 1 until points.size) {
+                lineTo(points[i].x, points[i].y)
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = pathColor.copy(alpha = 0.3f),
+            style = Stroke(width = 7.dp.toPx(), cap = StrokeCap.Round)
+        )
+        drawPath(
+            path = path,
+            color = pathColor,
+            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+        )
+    }
+
+    points.forEach { point ->
+        drawCircle(
+            color = pathColor,
+            radius = 5.dp.toPx(),
+            center = point
+        )
+        drawCircle(
+            color = Color.White,
+            radius = 2.dp.toPx(),
+            center = point
+        )
+    }
+}
+
+@Composable
+private fun LegendDot(
+    color: Color,
+    label: String
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(
+            shape = RoundedCornerShape(3.dp),
+            color = color,
+            modifier = Modifier.height(6.dp).width(14.dp)
+        ) {}
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

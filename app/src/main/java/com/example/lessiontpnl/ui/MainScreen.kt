@@ -174,12 +174,10 @@ fun MainScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-            // US 2 & BLE ESP32: Encabezado de Conexión y Selector de Conector
+            // US 2 & BLE ESP32: Encabezado de Conexión
             item {
                 ConnectionHeader(
-                    connectorMode = uiState.connectorMode,
                     connectionState = uiState.connectionState,
-                    onSelectMode = { mode -> viewModel.selectConnectorMode(mode, context) },
                     onOpenScanner = {
                         if (!BlePermissionHelper.hasPermissions(context)) {
                             permissionLauncher.launch(BlePermissionHelper.getRequiredPermissions())
@@ -187,11 +185,9 @@ fun MainScreen(
                             viewModel.openScannerDialog(context)
                         }
                     },
-                    onToggleConnection = { viewModel.toggleConnection() },
                     onRequestPermissions = {
                         permissionLauncher.launch(BlePermissionHelper.getRequiredPermissions())
                     },
-                    onTriggerError = { viewModel.triggerSimulatedError() },
                     onShowTechnicalInfo = { viewModel.showTechnicalDialog(true) }
                 )
             }

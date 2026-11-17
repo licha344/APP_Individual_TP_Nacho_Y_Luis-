@@ -1,6 +1,6 @@
 # LessionTPNL
 
-**Versión: 0.1.0**
+**Versión: 0.1.1**
 
 Aplicación Android para monitorear la activación muscular mediante un sensor EMG conectado a una placa ESP32 por Bluetooth Low Energy (BLE). También incluye un simulador para probar la aplicación sin hardware.
 
@@ -10,6 +10,7 @@ Aplicación Android para monitorear la activación muscular mediante un sensor E
 - Busca dispositivos BLE cercanos y recibe notificaciones del sensor EMG.
 - Permite simular mediciones, registrar sesiones y consultar el historial local.
 - Exporta las mediciones y sesiones a un archivo CSV.
+- Grafica la evolución de las métricas EMG y muestra las presiones sistólica y diastólica como series separadas.
 
 ## Requisitos
 
@@ -61,4 +62,4 @@ Las notificaciones fragmentadas se reensamblan antes de procesarse. Los permisos
 
 ## Nota
 
-La señal EMG y los valores del simulador son herramientas de monitoreo y no reemplazan un diagnóstico ni una evaluación médica profesional. Las métricas secundarias retiradas ya no forman parte de la vista principal.
+La señal EMG y los valores del simulador son herramientas de monitoreo y no reemplazan un diagnóstico ni una evaluación médica profesional. La pantalla principal prioriza las métricas EMG; algunas opciones secundarias ya no se muestran allí.

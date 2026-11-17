@@ -36,18 +36,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lessiontpnl.domain.model.ConnectionState
-import com.example.lessiontpnl.domain.model.ConnectorMode
 import com.example.lessiontpnl.ui.theme.NeonGlowBorder
 
 @Composable
 fun ConnectionHeader(
-    connectorMode: ConnectorMode,
     connectionState: ConnectionState,
-    onSelectMode: (ConnectorMode) -> Unit,
     onOpenScanner: () -> Unit,
-    onToggleConnection: () -> Unit,
     onRequestPermissions: () -> Unit,
-    onTriggerError: () -> Unit,
     onShowTechnicalInfo: () -> Unit,
     modifier: Modifier = Modifier
 ) {
