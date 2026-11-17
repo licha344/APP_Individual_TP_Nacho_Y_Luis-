@@ -17,7 +17,7 @@ class BlePayloadParserTest {
 
         val records = parser.parseJson(jsonPayload)
 
-        assertEquals(4, records.size)
+        assertEquals(6, records.size)
 
         // 1. Verificar Métrica de Fatiga/Activación Muscular EMG
         val emgRecord = records.first { it.metricType == MetricType.MUSCLE_FATIGUE }
@@ -27,7 +27,12 @@ class BlePayloadParserTest {
         assertEquals(1250, emgVal.emgRaw)
         assertEquals(45, emgVal.activationPercent)
 
-        // 2. CUMPLIMIENTO PROTOCOLO: Verificar que HR, Temp y Presión se etiquetan como DEMO_ESP32
+        // 2. Verificar Métrica EMG Raw
+        val rawRecord = records.first { it.metricType == MetricType.EMG_RAW }
+        assertEquals(DataSource.PHYSICAL_DEVICE, rawRecord.source)
+        assertEquals(1250, (rawRecord.value as MetricValue.EmgRawValue).rawValue)
+
+        // 3. CUMPLIMIENTO PROTOCOLO: Verificar que HR, Temp y Presión se etiquetan como DEMO_ESP32
         val hrRecord = records.first { it.metricType == MetricType.HEART_RATE }
         assertEquals(DataSource.DEMO_ESP32, hrRecord.source)
         assertEquals(76, (hrRecord.value as MetricValue.HeartRate).bpm)
@@ -54,7 +59,7 @@ class BlePayloadParserTest {
         assertTrue(recordsFromChunk1.isEmpty()) // Aún incompleto
 
         val recordsFromChunk2 = parser.processNotificationBytes(chunk2)
-        assertEquals(4, recordsFromChunk2.size) // Reensamblado exitosamente
+        assertEquals(6, recordsFromChunk2.size) // Reensamblado exitosamente
     }
 
     @Test

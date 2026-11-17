@@ -17,7 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,17 +51,21 @@ fun MetricCard(
     var isExpanded by remember { mutableStateOf(false) }
 
     val icon: ImageVector = when (displayInfo.type) {
+        MetricType.MUSCLE_FATIGUE -> Icons.Default.FitnessCenter
+        MetricType.EMG_RAW -> Icons.Default.GraphicEq
+        MetricType.EMG_PEAK -> Icons.AutoMirrored.Filled.ShowChart
         MetricType.HEART_RATE -> Icons.Default.Favorite
         MetricType.BODY_TEMPERATURE -> Icons.Default.Thermostat
         MetricType.BLOOD_PRESSURE -> Icons.Default.Compress
-        MetricType.MUSCLE_FATIGUE -> Icons.Default.FitnessCenter
     }
 
     val iconColor: Color = when (displayInfo.type) {
-        MetricType.HEART_RATE -> Color(0xFFFF1744) // Rojo Neón Intensificado
-        MetricType.BODY_TEMPERATURE -> Color(0xFFFF9100) // Naranja Neón
-        MetricType.BLOOD_PRESSURE -> Color(0xFF00E5FF) // Cian Neón
         MetricType.MUSCLE_FATIGUE -> Color(0xFFD500F9) // Magenta Neón
+        MetricType.EMG_RAW -> Color(0xFF00E5FF) // Cian Neón
+        MetricType.EMG_PEAK -> Color(0xFF00E676) // Verde Neón
+        MetricType.HEART_RATE -> Color(0xFFFF1744) // Rojo Neón
+        MetricType.BODY_TEMPERATURE -> Color(0xFFFF9100) // Naranja Neón
+        MetricType.BLOOD_PRESSURE -> Color(0xFF29B6F6)
     }
 
     val statusBadgeColor: Color = when {

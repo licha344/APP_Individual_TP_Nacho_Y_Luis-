@@ -7,8 +7,7 @@ import com.example.lessiontpnl.domain.model.MetricValue
 
 /**
  * Analizador y reensamblador defensivo de paquetes JSON para la característica BLE del ESP32.
- * Utiliza un parser puro en Kotlin e implementa un buffer de acumulación para manejar
- * fragmentación de notificaciones BLE cuando el MTU predeterminado (20 bytes) fragmenta el payload JSON.
+ * Deserializa las notificaciones del sensor EMG V3 (señal bruta, activación % y amplitud en mV).
  */
 class BlePayloadParser {
 
@@ -40,8 +39,7 @@ class BlePayloadParser {
     }
 
     /**
-     * Parsea directamente una cadena JSON completa (útil para lecturas READ o notificaciones reensambladas).
-     * No depende de stubs del SDK Android, garantizando compatibilidad total en pruebas unitarias JVM y tiempo de ejecución.
+     * Parsea la cadena JSON de notificaciones recibidas desde la placa ESP32 y el sensor EMG V3.
      */
     fun parseJson(jsonString: String): List<MeasurementRecord> {
         val records = mutableListOf<MeasurementRecord>()
@@ -58,11 +56,12 @@ class BlePayloadParser {
             return numericFields[key]?.toDoubleOrNull()
         }
 
-        // 1. Procesar Lecturas EMG y Activación Muscular (Dato real proveniente del sensor EMG)
+        // 1. Procesar Métrica Principal: Activación Muscular (EMG %)
         val emgRaw = getIntField("emg")
         val fatiguePercent = getIntField("fatigue")
 
         if (emgRaw != null && emgRaw >= 0 && fatiguePercent != null && fatiguePercent in 0..100) {
+            // Métrica 1: Activación Muscular (%)
             records.add(
                 MeasurementRecord(
                     metricType = MetricType.MUSCLE_FATIGUE,
@@ -75,10 +74,30 @@ class BlePayloadParser {
                     source = DataSource.PHYSICAL_DEVICE
                 )
             )
+
+            // Métrica 2: Señal EMG Raw (unidades ADC 0-4095)
+            records.add(
+                MeasurementRecord(
+                    metricType = MetricType.EMG_RAW,
+                    value = MetricValue.EmgRawValue(rawValue = emgRaw),
+                    timestamp = now,
+                    source = DataSource.PHYSICAL_DEVICE
+                )
+            )
+
+            // Métrica 3: Amplitud Pico EMG calculada en milivoltios (mV)
+            val peakMv = (emgRaw.toDouble() / 4095.0) * 3300.0
+            records.add(
+                MeasurementRecord(
+                    metricType = MetricType.EMG_PEAK,
+                    value = MetricValue.EmgPeakValue(peakMv = Math.round(peakMv * 10.0) / 10.0),
+                    timestamp = now,
+                    source = DataSource.PHYSICAL_DEVICE
+                )
+            )
         }
 
-        // 2. CUMPLIMIENTO PROTOCOLO ESP32: Las cifras de HR, Temp y Presión del firmware de ejemplo son FIJAS.
-        // Se etiquetan explícitamente como DataSource.DEMO_ESP32 ("Demo ESP32 (Fijo)") para no falsificar mediciones reales.
+        // 2. Métricas secundarias opcionales/fijas si están presentes en la trama del ESP32
         val hr = getIntField("hr")
         if (hr != null) {
             records.add(
@@ -165,7 +184,6 @@ class BlePayloadParser {
             return jsonString
         }
 
-        // Si hay contenido antes de '{', limpiarlo
         if (start > 0) {
             accumulator.delete(0, start)
         }

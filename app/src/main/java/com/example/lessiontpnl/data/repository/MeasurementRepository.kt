@@ -232,6 +232,14 @@ class MeasurementRepository(
                 obj.put("val1", v.emgRaw)
                 obj.put("val2", v.activationPercent)
             }
+            is MetricValue.EmgRawValue -> {
+                obj.put("valueType", "EmgRawValue")
+                obj.put("val1", v.rawValue)
+            }
+            is MetricValue.EmgPeakValue -> {
+                obj.put("valueType", "EmgPeakValue")
+                obj.put("valDouble", v.peakMv)
+            }
             is MetricValue.MuscleFatigueUnavailable -> {
                 obj.put("valueType", "MuscleFatigueUnavailable")
                 obj.put("valStr", v.reason)
@@ -260,6 +268,8 @@ class MeasurementRepository(
                 "BodyTemperature" -> MetricValue.BodyTemperature(obj.getDouble("valDouble"))
                 "BloodPressure" -> MetricValue.BloodPressure(obj.getInt("val1"), obj.getInt("val2"))
                 "MuscleFatigueEmg" -> MetricValue.MuscleFatigueEmg(obj.getInt("val1"), obj.getInt("val2"))
+                "EmgRawValue" -> MetricValue.EmgRawValue(obj.getInt("val1"))
+                "EmgPeakValue" -> MetricValue.EmgPeakValue(obj.getDouble("valDouble"))
                 "MuscleFatigueUnavailable" -> MetricValue.MuscleFatigueUnavailable(obj.optString("valStr", ""))
                 "Error" -> MetricValue.Error(obj.optString("valStr", "Error"))
                 else -> MetricValue.NoData

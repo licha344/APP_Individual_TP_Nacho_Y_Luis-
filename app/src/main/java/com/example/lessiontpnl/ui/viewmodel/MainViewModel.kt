@@ -531,6 +531,39 @@ class MainViewModel(
         }
 
         return when (val v = record.value) {
+            is MetricValue.MuscleFatigueEmg -> MetricDisplayInfo(
+                type = metricType,
+                valueText = "${v.activationPercent} %",
+                unitText = metricType.unit,
+                statusText = "EMG: ${v.emgRaw}",
+                descriptionText = metricType.description,
+                sourceText = record.source.label,
+                timestampText = timeFormat.format(Date(record.timestamp)),
+                isAvailable = true,
+                isError = false
+            )
+            is MetricValue.EmgRawValue -> MetricDisplayInfo(
+                type = metricType,
+                valueText = "${v.rawValue}",
+                unitText = metricType.unit,
+                statusText = "Disponible",
+                descriptionText = metricType.description,
+                sourceText = record.source.label,
+                timestampText = timeFormat.format(Date(record.timestamp)),
+                isAvailable = true,
+                isError = false
+            )
+            is MetricValue.EmgPeakValue -> MetricDisplayInfo(
+                type = metricType,
+                valueText = String.format(Locale.getDefault(), "%.1f", v.peakMv),
+                unitText = metricType.unit,
+                statusText = "Disponible",
+                descriptionText = metricType.description,
+                sourceText = record.source.label,
+                timestampText = timeFormat.format(Date(record.timestamp)),
+                isAvailable = true,
+                isError = false
+            )
             is MetricValue.HeartRate -> MetricDisplayInfo(
                 type = metricType,
                 valueText = "${v.bpm}",
@@ -559,17 +592,6 @@ class MainViewModel(
                 unitText = metricType.unit,
                 statusText = if (record.source == DataSource.DEMO_ESP32) "Demo (Fijo)" else "Disponible",
                 descriptionText = metricType.description + if (record.source == DataSource.DEMO_ESP32) " (Atención: Dato fijo de demostración de firmware ESP32)." else "",
-                sourceText = record.source.label,
-                timestampText = timeFormat.format(Date(record.timestamp)),
-                isAvailable = true,
-                isError = false
-            )
-            is MetricValue.MuscleFatigueEmg -> MetricDisplayInfo(
-                type = metricType,
-                valueText = "${v.activationPercent} %",
-                unitText = metricType.unit,
-                statusText = "EMG: ${v.emgRaw}",
-                descriptionText = metricType.description,
                 sourceText = record.source.label,
                 timestampText = timeFormat.format(Date(record.timestamp)),
                 isAvailable = true,

@@ -4,32 +4,42 @@ import com.example.lessiontpnl.config.ProvisionalDataConfig
 import java.util.UUID
 
 /**
- * Tipos de métricas físicas monitoreadas por la aplicación.
+ * Tipos de métricas físicas monitoreadas por la aplicación centradas en el sensor EMG V3 y placa ESP32.
  */
 enum class MetricType(
     val displayName: String,
     val unit: String,
     val description: String
 ) {
-    HEART_RATE(
-        displayName = "Ritmo Cardíaco",
-        unit = "bpm",
-        description = "Frecuencia del pulso cardíaco expresada en latidos por minuto. Permite monitorear el esfuerzo físico."
-    ),
-    BODY_TEMPERATURE(
-        displayName = "Temperatura Corporal",
-        unit = ProvisionalDataConfig.BODY_TEMP_UNIT,
-        description = "Temperatura corporal en grados Celsius (°C). Monitorea la termorregulación."
-    ),
-    BLOOD_PRESSURE(
-        displayName = "Presión Arterial",
-        unit = ProvisionalDataConfig.BLOOD_PRESSURE_UNIT,
-        description = "Presión ejercida por la sangre en las arterias (Sistólica / Diastólica)."
-    ),
     MUSCLE_FATIGUE(
         displayName = "Activación Muscular (EMG)",
         unit = ProvisionalDataConfig.MUSCLE_FATIGUE_SCALE,
         description = "Estimación del nivel de activación neuromuscular basada en lecturas del sensor EMG. No representa una medición clínica ni diagnóstico médico."
+    ),
+    EMG_RAW(
+        displayName = "Señal EMG Raw",
+        unit = "unidades ADC",
+        description = "Amplitud bruta de la señal electromiográfica analógica capturada por la placa ESP32 y el sensor EMG V3 (0-4095 ADC)."
+    ),
+    EMG_PEAK(
+        displayName = "Amplitud Pico EMG",
+        unit = "mV",
+        description = "Amplitud máxima instantánea en milivoltios registrada durante las contracciones musculares."
+    ),
+    HEART_RATE(
+        displayName = "Ritmo Cardíaco",
+        unit = "bpm",
+        description = "Frecuencia del pulso cardíaco expresada en latidos por minuto (métrica opcional/demo)."
+    ),
+    BODY_TEMPERATURE(
+        displayName = "Temperatura Corporal",
+        unit = ProvisionalDataConfig.BODY_TEMP_UNIT,
+        description = "Temperatura corporal en grados Celsius (°C) (métrica opcional/demo)."
+    ),
+    BLOOD_PRESSURE(
+        displayName = "Presión Arterial",
+        unit = ProvisionalDataConfig.BLOOD_PRESSURE_UNIT,
+        description = "Presión ejercida por la sangre en las arterias (métrica opcional/demo)."
     )
 }
 
@@ -54,14 +64,16 @@ enum class DataSource(val label: String) {
  * Representación tipada de los valores de las métricas.
  */
 sealed class MetricValue {
-    data class HeartRate(val bpm: Int) : MetricValue()
-    data class BodyTemperature(val celsius: Double) : MetricValue()
-    data class BloodPressure(val systolic: Int, val diastolic: Int) : MetricValue()
     data class MuscleFatigueEmg(
         val emgRaw: Int,
         val activationPercent: Int,
         val isDemoData: Boolean = false
     ) : MetricValue()
+    data class EmgRawValue(val rawValue: Int) : MetricValue()
+    data class EmgPeakValue(val peakMv: Double) : MetricValue()
+    data class HeartRate(val bpm: Int) : MetricValue()
+    data class BodyTemperature(val celsius: Double) : MetricValue()
+    data class BloodPressure(val systolic: Int, val diastolic: Int) : MetricValue()
     data class MuscleFatigueUnavailable(
         val reason: String = ProvisionalDataConfig.MUSCLE_FATIGUE_UNAVAILABLE_REASON
     ) : MetricValue()

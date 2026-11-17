@@ -103,6 +103,8 @@ object CsvExporter {
             is MetricValue.BodyTemperature -> Triple(String.format(Locale.ROOT, "%.1f", v.celsius), record.metricType.unit, "Temperatura Corporal")
             is MetricValue.BloodPressure -> Triple("${v.systolic} / ${v.diastolic}", record.metricType.unit, "Presión Arterial")
             is MetricValue.MuscleFatigueEmg -> Triple("${v.activationPercent}", record.metricType.unit, "Raw EMG: ${v.emgRaw}")
+            is MetricValue.EmgRawValue -> Triple("${v.rawValue}", record.metricType.unit, "Señal EMG Raw ADC")
+            is MetricValue.EmgPeakValue -> Triple(String.format(Locale.ROOT, "%.1f", v.peakMv), record.metricType.unit, "Amplitud Pico EMG")
             is MetricValue.MuscleFatigueUnavailable -> Triple("Sin datos", record.metricType.unit, v.reason)
             is MetricValue.Error -> Triple("Error", record.metricType.unit, v.message)
             is MetricValue.NoData -> Triple("Sin datos", record.metricType.unit, "No disponible")

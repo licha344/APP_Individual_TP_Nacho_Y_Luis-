@@ -208,12 +208,11 @@ fun MainScreen(
                     )
 
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                        val columns = if (maxWidth < 600.dp) 1 else 2
+                        val columns = if (maxWidth < 600.dp) 1 else 3
                         val metrics = listOf(
                             MetricType.MUSCLE_FATIGUE,
-                            MetricType.HEART_RATE,
-                            MetricType.BODY_TEMPERATURE,
-                            MetricType.BLOOD_PRESSURE
+                            MetricType.EMG_RAW,
+                            MetricType.EMG_PEAK
                         )
                         if (columns == 1) {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -225,16 +224,9 @@ fun MainScreen(
                             }
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                metrics.chunked(2).forEach { columnMetrics ->
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        columnMetrics.forEach { metric ->
-                                            uiState.metricsMap[metric]?.let { displayInfo ->
-                                                MetricCard(displayInfo = displayInfo, modifier = Modifier.fillMaxWidth())
-                                            }
-                                        }
+                                metrics.forEach { metric ->
+                                    uiState.metricsMap[metric]?.let { displayInfo ->
+                                        MetricCard(displayInfo = displayInfo, modifier = Modifier.weight(1f))
                                     }
                                 }
                             }

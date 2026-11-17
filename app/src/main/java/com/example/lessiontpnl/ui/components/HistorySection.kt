@@ -192,6 +192,8 @@ private fun HistoryItemCard(record: MeasurementRecord) {
         is MetricValue.BodyTemperature -> String.format(Locale.getDefault(), "%.1f", v.celsius) to record.metricType.unit
         is MetricValue.BloodPressure -> "${v.systolic} / ${v.diastolic}" to record.metricType.unit
         is MetricValue.MuscleFatigueEmg -> "${v.activationPercent} % (EMG: ${v.emgRaw})" to record.metricType.unit
+        is MetricValue.EmgRawValue -> "${v.rawValue}" to record.metricType.unit
+        is MetricValue.EmgPeakValue -> String.format(Locale.getDefault(), "%.1f", v.peakMv) to record.metricType.unit
         is MetricValue.MuscleFatigueUnavailable -> "Sin datos" to record.metricType.unit
         is MetricValue.Error -> "Error" to record.metricType.unit
         is MetricValue.NoData -> "Sin datos" to record.metricType.unit
