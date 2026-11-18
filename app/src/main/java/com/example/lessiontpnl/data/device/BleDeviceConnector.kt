@@ -35,9 +35,9 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 /**
- * Conector físico BLE para búsqueda, selección y comunicación GATT con sensores EMG/ESP32.
- * Soporta escaneo público de dispositivos cercanos con nombre, dirección MAC y RSSI,
- * permitiendo al usuario seleccionar explícitamente a qué dispositivo conectarse.
+ * Conector físico BLE para búsqueda, selección y comunicación GATT con sensores EMG/ESP32 LESSION.
+ * Soporta escaneo de dispositivos periféricos, suscripción al servicio UART (6E400001)
+ * y recepción de notificaciones en la característica TX (6E400003).
  */
 class BleDeviceConnector(
     private val context: Context,
@@ -61,6 +61,7 @@ class BleDeviceConnector(
 
     private var bluetoothGatt: BluetoothGatt? = null
     private var measurementCharacteristic: BluetoothGattCharacteristic? = null
+    private var rxCharacteristic: BluetoothGattCharacteristic? = null
     private var scanJob: Job? = null
     private var isScanning = false
     @Volatile
@@ -68,6 +69,7 @@ class BleDeviceConnector(
 
     private val serviceUuid = UUID.fromString(ProvisionalDataConfig.ESP32_SERVICE_UUID)
     private val characteristicUuid = UUID.fromString(ProvisionalDataConfig.ESP32_CHARACTERISTIC_UUID)
+    private val rxCharacteristicUuid = UUID.fromString(ProvisionalDataConfig.ESP32_RX_CHARACTERISTIC_UUID)
     private val cccdUuid = UUID.fromString(ProvisionalDataConfig.CCCD_DESCRIPTOR_UUID)
 
     @SuppressLint("MissingPermission")
@@ -95,6 +97,7 @@ class BleDeviceConnector(
         bluetoothGatt?.close()
         bluetoothGatt = null
         measurementCharacteristic = null
+        rxCharacteristic = null
         payloadParser.resetBuffer()
         _connectionState.value = ConnectionState.Scanning
         isScanning = true
@@ -157,6 +160,7 @@ class BleDeviceConnector(
         bluetoothGatt?.close()
         bluetoothGatt = null
         measurementCharacteristic = null
+        rxCharacteristic = null
         payloadParser.resetBuffer()
         _connectionState.value = ConnectionState.Disconnected
     }
@@ -169,6 +173,7 @@ class BleDeviceConnector(
         bluetoothGatt?.close()
         bluetoothGatt = null
         measurementCharacteristic = null
+        rxCharacteristic = null
         payloadParser.resetBuffer()
         _connectionState.value = ConnectionState.Error(message)
     }
@@ -189,6 +194,24 @@ class BleDeviceConnector(
         stopScan()
         if (_connectionState.value is ConnectionState.Scanning) {
             _connectionState.value = ConnectionState.Disconnected
+        }
+    }
+
+    /**
+     * Envía un comando ASCII ("START" o "STOP") al canal RX de la placa ESP32 (característica 6E400002).
+     */
+    @SuppressLint("MissingPermission")
+    fun sendRxCommand(command: String) {
+        val gatt = bluetoothGatt ?: return
+        val rxChar = rxCharacteristic ?: return
+        val bytes = command.toByteArray(Charsets.UTF_8)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            gatt.writeCharacteristic(rxChar, bytes, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+        } else {
+            @Suppress("DEPRECATION")
+            rxChar.value = bytes
+            @Suppress("DEPRECATION")
+            gatt.writeCharacteristic(rxChar)
         }
     }
 
@@ -252,6 +275,7 @@ class BleDeviceConnector(
                 gatt?.close()
                 bluetoothGatt = null
                 measurementCharacteristic = null
+                rxCharacteristic = null
                 _connectionState.value = if (disconnectRequested) {
                     ConnectionState.Disconnected
                 } else {
@@ -269,11 +293,12 @@ class BleDeviceConnector(
                 gatt?.close()
                 bluetoothGatt = null
                 measurementCharacteristic = null
+                rxCharacteristic = null
                 payloadParser.resetBuffer()
                 _connectionState.value = if (disconnectRequested) {
                     ConnectionState.Disconnected
                 } else {
-                    ConnectionState.Error("Se perdió la conexión con el ESP32.")
+                    ConnectionState.Error("Se perdió la conexión con el ESP32 LESSION.")
                 }
             }
         }
@@ -293,29 +318,32 @@ class BleDeviceConnector(
 
             val service = gatt?.getService(serviceUuid)
             if (service == null) {
-                _connectionState.value = ConnectionState.Error("El dispositivo no ofrece el servicio BLE configurado para el ESP32.")
+                _connectionState.value = ConnectionState.Error("El dispositivo no ofrece el servicio BLE '6E400001' configurado para el ESP32 LESSION.")
                 return
             }
+
+            rxCharacteristic = service.getCharacteristic(rxCharacteristicUuid)
+
             val characteristic = service.getCharacteristic(characteristicUuid)
             if (characteristic == null) {
-                _connectionState.value = ConnectionState.Error("No se encontró la característica BLE configurada para las mediciones.")
+                _connectionState.value = ConnectionState.Error("No se encontró la característica TX '6E400003' configurada para las notificaciones.")
                 return
             }
 
             val descriptor = characteristic.getDescriptor(cccdUuid)
             if (descriptor == null) {
-                _connectionState.value = ConnectionState.Error("La característica del ESP32 no ofrece el descriptor de notificaciones requerido.")
+                _connectionState.value = ConnectionState.Error("La característica TX del ESP32 LESSION no ofrece el descriptor CCCD 0x2902 requerido.")
                 return
             }
 
             if ((characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
-                _connectionState.value = ConnectionState.Error("La característica BLE del ESP32 no admite notificaciones.")
+                _connectionState.value = ConnectionState.Error("La característica TX del ESP32 LESSION no admite notificaciones.")
                 return
             }
             measurementCharacteristic = characteristic
             val notificationSet = gatt.setCharacteristicNotification(characteristic, true)
             if (!notificationSet) {
-                _connectionState.value = ConnectionState.Error("No se habilitaron las notificaciones en la característica.")
+                _connectionState.value = ConnectionState.Error("No se habilitaron las notificaciones en la característica TX.")
                 return
             }
 
@@ -329,10 +357,11 @@ class BleDeviceConnector(
                 gatt.writeDescriptor(descriptor)
             }
             if (!writeStarted) {
-                _connectionState.value = ConnectionState.Error("Android no pudo solicitar la suscripción BLE del ESP32.")
+                _connectionState.value = ConnectionState.Error("Android no pudo solicitar la suscripción BLE del ESP32 LESSION.")
             }
         }
 
+        @SuppressLint("MissingPermission")
         override fun onDescriptorWrite(
             gatt: BluetoothGatt,
             descriptor: BluetoothGattDescriptor,
@@ -340,7 +369,7 @@ class BleDeviceConnector(
         ) {
             if (gatt !== bluetoothGatt || descriptor.uuid != cccdUuid) return
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                _connectionState.value = ConnectionState.Error("No se pudo activar la recepción de notificaciones del ESP32 ($status).")
+                _connectionState.value = ConnectionState.Error("No se pudo activar la recepción de notificaciones del ESP32 LESSION ($status).")
                 return
             }
             val characteristic = measurementCharacteristic

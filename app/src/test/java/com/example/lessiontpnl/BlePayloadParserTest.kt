@@ -11,6 +11,42 @@ import org.junit.Test
 class BlePayloadParserTest {
 
     @Test
+    fun `parseLine correctly parses official ESP32 LESSION protocol t_ms,adc format`() {
+        val parser = BlePayloadParser()
+        val line = "12340,2048"
+
+        val records = parser.parseLine(line)
+
+        assertEquals(3, records.size)
+
+        // 1. Métrica: Activación Muscular (%)
+        val emgRecord = records.first { it.metricType == MetricType.MUSCLE_FATIGUE }
+        assertEquals(DataSource.PHYSICAL_DEVICE, emgRecord.source)
+        assertTrue(emgRecord.value is MetricValue.MuscleFatigueEmg)
+        val emgVal = emgRecord.value as MetricValue.MuscleFatigueEmg
+        assertEquals(2048, emgVal.emgRaw)
+        assertEquals(50, emgVal.activationPercent) // (2048/4095) * 100 = 50%
+
+        // 2. Métrica: Señal EMG Raw
+        val rawRecord = records.first { it.metricType == MetricType.EMG_RAW }
+        assertEquals(2048, (rawRecord.value as MetricValue.EmgRawValue).rawValue)
+
+        // 3. Métrica: Amplitud Pico EMG (mV)
+        val peakRecord = records.first { it.metricType == MetricType.EMG_PEAK }
+        assertEquals(1650.0, (peakRecord.value as MetricValue.EmgPeakValue).peakMv, 1.0)
+    }
+
+    @Test
+    fun `processNotificationBytes handles line delimited notifications from ESP32 LESSION`() {
+        val parser = BlePayloadParser()
+        val notificationBytes = "12340,2048\n12360,2500\n".toByteArray(Charsets.UTF_8)
+
+        val records = parser.processNotificationBytes(notificationBytes)
+
+        assertEquals(6, records.size) // 3 métricas por cada línea recibida
+    }
+
+    @Test
     fun `parseJson correctly extracts muscle fatigue EMG and tags demo HR temp BP data`() {
         val parser = BlePayloadParser()
         val jsonPayload = """{"emg":1250,"fatigue":45,"hr":76,"temp":36.6,"sys":120,"dia":80}"""

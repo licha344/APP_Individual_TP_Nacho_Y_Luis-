@@ -6,8 +6,9 @@ import com.example.lessiontpnl.domain.model.MetricType
 import com.example.lessiontpnl.domain.model.MetricValue
 
 /**
- * Analizador y reensamblador defensivo de paquetes JSON para la característica BLE del ESP32.
- * Deserializa las notificaciones del sensor EMG V3 (señal bruta, activación % y amplitud en mV).
+ * Analizador y reensamblador defensivo de notificaciones BLE para la placa ESP32 (ESP32 LESSION).
+ * Procesa el protocolo oficial Versión 1 (`t_ms,adc\n`) enviado a 50 Hz desde la característica TX (6E400003),
+ * manteniendo soporte retrocompatible para tramas JSON.
  */
 class BlePayloadParser {
 
@@ -27,19 +28,89 @@ class BlePayloadParser {
         }
 
         val records = mutableListOf<MeasurementRecord>()
-        var fullJsonString = findAndExtractCompleteJson()
 
-        while (fullJsonString != null) {
-            val parsedRecords = parseJson(fullJsonString)
-            records.addAll(parsedRecords)
-            fullJsonString = findAndExtractCompleteJson()
+        // 1. Intentar procesar líneas completas en formato oficial "t_ms,adc\n"
+        var lineEndIndex = accumulator.indexOf("\n")
+        while (lineEndIndex >= 0) {
+            val rawLine = accumulator.substring(0, lineEndIndex).trim()
+            accumulator.delete(0, lineEndIndex + 1)
+
+            if (rawLine.isNotEmpty()) {
+                val parsedRecords = parseLine(rawLine)
+                records.addAll(parsedRecords)
+            }
+            lineEndIndex = accumulator.indexOf("\n")
+        }
+
+        // 2. Si el acumulador no contenía saltos de línea pero contenía JSON completo "{...}"
+        val jsonString = findAndExtractCompleteJson()
+        if (jsonString != null) {
+            records.addAll(parseJson(jsonString))
         }
 
         return records
     }
 
     /**
-     * Parsea la cadena JSON de notificaciones recibidas desde la placa ESP32 y el sensor EMG V3.
+     * Parsea una línea en el formato oficial Protocolo V1: `t_ms,adc` (ej. "12340,2048").
+     * t_ms: milisegundos desde el arranque del ESP32.
+     * adc: entero de 0 a 4095 (12-bit ADC).
+     */
+    fun parseLine(line: String): List<MeasurementRecord> {
+        val records = mutableListOf<MeasurementRecord>()
+        val parts = line.split(",")
+        if (parts.size != 2) return records
+
+        val timestampMs = parts[0].trim().toLongOrNull()
+        val adcValue = parts[1].trim().toIntOrNull()
+
+        if (timestampMs != null && timestampMs >= 0 && adcValue != null && adcValue in 0..4095) {
+            val now = System.currentTimeMillis()
+
+            // Mapeo lineal del ADC 12 bits (0..4095) a porcentaje de activación (0..100 %)
+            val activationPercent = ((adcValue.toDouble() / 4095.0) * 100.0).toInt().coerceIn(0, 100)
+            val peakMv = Math.round(((adcValue.toDouble() / 4095.0) * 3300.0) * 10.0) / 10.0
+
+            // 1. Métrica: Activación Muscular (%)
+            records.add(
+                MeasurementRecord(
+                    metricType = MetricType.MUSCLE_FATIGUE,
+                    value = MetricValue.MuscleFatigueEmg(
+                        emgRaw = adcValue,
+                        activationPercent = activationPercent,
+                        isDemoData = false
+                    ),
+                    timestamp = now,
+                    source = DataSource.PHYSICAL_DEVICE
+                )
+            )
+
+            // 2. Métrica: Señal EMG Raw (cuentas ADC 0..4095)
+            records.add(
+                MeasurementRecord(
+                    metricType = MetricType.EMG_RAW,
+                    value = MetricValue.EmgRawValue(rawValue = adcValue),
+                    timestamp = now,
+                    source = DataSource.PHYSICAL_DEVICE
+                )
+            )
+
+            // 3. Métrica: Amplitud Pico EMG (mV)
+            records.add(
+                MeasurementRecord(
+                    metricType = MetricType.EMG_PEAK,
+                    value = MetricValue.EmgPeakValue(peakMv = peakMv),
+                    timestamp = now,
+                    source = DataSource.PHYSICAL_DEVICE
+                )
+            )
+        }
+
+        return records
+    }
+
+    /**
+     * Parsea cadenas JSON para retrocompatibilidad.
      */
     fun parseJson(jsonString: String): List<MeasurementRecord> {
         val records = mutableListOf<MeasurementRecord>()
@@ -48,20 +119,13 @@ class BlePayloadParser {
         val numericFields = parseNumericFields(payload) ?: return records
         val now = System.currentTimeMillis()
 
-        fun getIntField(key: String): Int? {
-            return numericFields[key]?.toIntOrNull()
-        }
+        fun getIntField(key: String): Int? = numericFields[key]?.toIntOrNull()
+        fun getDoubleField(key: String): Double? = numericFields[key]?.toDoubleOrNull()
 
-        fun getDoubleField(key: String): Double? {
-            return numericFields[key]?.toDoubleOrNull()
-        }
-
-        // 1. Procesar Métrica Principal: Activación Muscular (EMG %)
         val emgRaw = getIntField("emg")
         val fatiguePercent = getIntField("fatigue")
 
         if (emgRaw != null && emgRaw >= 0 && fatiguePercent != null && fatiguePercent in 0..100) {
-            // Métrica 1: Activación Muscular (%)
             records.add(
                 MeasurementRecord(
                     metricType = MetricType.MUSCLE_FATIGUE,
@@ -74,8 +138,6 @@ class BlePayloadParser {
                     source = DataSource.PHYSICAL_DEVICE
                 )
             )
-
-            // Métrica 2: Señal EMG Raw (unidades ADC 0-4095)
             records.add(
                 MeasurementRecord(
                     metricType = MetricType.EMG_RAW,
@@ -84,8 +146,6 @@ class BlePayloadParser {
                     source = DataSource.PHYSICAL_DEVICE
                 )
             )
-
-            // Métrica 3: Amplitud Pico EMG calculada en milivoltios (mV)
             val peakMv = (emgRaw.toDouble() / 4095.0) * 3300.0
             records.add(
                 MeasurementRecord(
@@ -97,7 +157,6 @@ class BlePayloadParser {
             )
         }
 
-        // 2. Métricas secundarias opcionales/fijas si están presentes en la trama del ESP32
         val hr = getIntField("hr")
         if (hr != null) {
             records.add(
