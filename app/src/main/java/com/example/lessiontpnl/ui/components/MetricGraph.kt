@@ -41,6 +41,10 @@ import com.example.lessiontpnl.domain.model.MeasurementRecord
 import com.example.lessiontpnl.domain.model.MetricType
 import com.example.lessiontpnl.domain.model.MetricValue
 import com.example.lessiontpnl.domain.model.TimeRangeFilter
+import com.example.lessiontpnl.ui.theme.PaletteLavender
+import com.example.lessiontpnl.ui.theme.PaletteLightLavender
+import com.example.lessiontpnl.ui.theme.PaletteLime
+import com.example.lessiontpnl.ui.theme.PaletteMutedPurple
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -212,9 +216,9 @@ fun MetricGraph(
                 }
             } else if (isBloodPressure) {
                 // GRAFICO DOBLE SERIE: PRESIÓN ARTERIAL (SISTÓLICA Y DIASTÓLICA)
-                val sysColor = Color(0xFFFF1744) // Rojo Neón Sistólica
-                val diaColor = Color(0xFF00E5FF) // Cian Neón Diastólica
-                val gridColor = Color(0xFF1E2A3A)
+                val sysColor = PaletteLightLavender
+                val diaColor = PaletteLime
+                val gridColor = PaletteMutedPurple
 
                 val allY = bpPoints.flatMap { listOf(it.second, it.third) }
                 val minY = (allY.minOrNull() ?: 60.0) * 0.9
@@ -303,7 +307,7 @@ fun MetricGraph(
             } else {
                 // GRAFICO SERIE SIMPLE (Ritmo Cardíaco, Temperatura Corporal, EMG)
                 val lineColor = MaterialTheme.colorScheme.primary
-                val gridColor = Color(0xFF1E2A3A)
+                val gridColor = PaletteMutedPurple
 
                 val minY = (singlePoints.minOf { it.second } * 0.95).coerceAtLeast(0.0)
                 val maxY = (singlePoints.maxOf { it.second } * 1.05).coerceAtLeast(minY + 1.0)
@@ -420,7 +424,7 @@ private fun DrawScope.drawSeries(
             center = point
         )
         drawCircle(
-            color = Color.White,
+            color = PaletteLime,
             radius = 2.dp.toPx(),
             center = point
         )

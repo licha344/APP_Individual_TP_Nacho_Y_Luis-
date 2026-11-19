@@ -32,11 +32,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.lessiontpnl.domain.model.ConnectionState
 import com.example.lessiontpnl.ui.theme.NeonGlowBorder
+import com.example.lessiontpnl.ui.theme.PaletteDeepPurple
+import com.example.lessiontpnl.ui.theme.PaletteLightLavender
+import com.example.lessiontpnl.ui.theme.PaletteLime
+import com.example.lessiontpnl.ui.theme.PaletteOlive
 
 @Composable
 fun ConnectionHeader(
@@ -48,10 +51,10 @@ fun ConnectionHeader(
 ) {
     val statusColor by animateColorAsState(
         targetValue = when (connectionState) {
-            is ConnectionState.Connected -> Color(0xFF00E676) // Verde Neón
-            is ConnectionState.Connecting, is ConnectionState.Scanning -> Color(0xFFFFAB00) // Ámbar Neón
-            is ConnectionState.Disconnected -> Color(0xFF78909C) // Gris Azulado
-            is ConnectionState.PermissionRequired, is ConnectionState.BluetoothDisabled, is ConnectionState.Error -> Color(0xFFFF5252) // Coral Neón
+            is ConnectionState.Connected -> PaletteLime
+            is ConnectionState.Connecting, is ConnectionState.Scanning -> PaletteLightLavender
+            is ConnectionState.Disconnected -> PaletteOlive
+            is ConnectionState.PermissionRequired, is ConnectionState.BluetoothDisabled, is ConnectionState.Error -> PaletteLime
         },
         label = "statusColor"
     )
@@ -94,7 +97,7 @@ fun ConnectionHeader(
                             text = "Placa ESP32: ${connectionState.label}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = statusColor
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -119,8 +122,8 @@ fun ConnectionHeader(
                 Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF380000),
-                    border = BorderStroke(1.dp, Color(0xFFFF5252)),
+                    color = PaletteDeepPurple,
+                    border = BorderStroke(1.dp, PaletteLime),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -130,7 +133,7 @@ fun ConnectionHeader(
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Alerta",
-                            tint = Color(0xFFFF5252),
+                            tint = PaletteLime,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -142,7 +145,7 @@ fun ConnectionHeader(
                                 else -> ""
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFFF8A80)
+                            color = PaletteLime
                         )
                     }
                 }
@@ -177,8 +180,8 @@ fun ConnectionHeader(
                             onClick = onOpenScanner,
                             modifier = if (compact) Modifier.widthIn(min = 200.dp) else Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isConnected) Color(0xFF00E676) else MaterialTheme.colorScheme.primary,
-                                contentColor = if (isConnected) Color(0xFF00202B) else MaterialTheme.colorScheme.onPrimary
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
                             Icon(imageVector = Icons.Default.Bluetooth, contentDescription = null, modifier = Modifier.size(16.dp))

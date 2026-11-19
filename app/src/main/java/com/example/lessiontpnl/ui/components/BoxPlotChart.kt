@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +36,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lessiontpnl.domain.model.FatigueSessionPlot
+import com.example.lessiontpnl.ui.theme.PaletteLavender
+import com.example.lessiontpnl.ui.theme.PaletteLime
 import com.example.lessiontpnl.util.CsvExporter
 import java.util.Locale
 
@@ -111,7 +112,7 @@ private fun SessionBoxPlot(
 ) {
     val data = plot.data
     val lineColor = MaterialTheme.colorScheme.primary
-    val medianColor = Color(0xFFFFAB00)
+    val medianColor = PaletteLavender
     val boxFill = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
     val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
     val range = (data.max - data.min).coerceAtLeast(1.0)
@@ -182,7 +183,7 @@ private fun SessionBoxPlot(
                 )
                 drawLine(medianColor, Offset(leftX, yMedian), Offset(rightX, yMedian), 3.dp.toPx())
                 data.outliers.forEach { outlier ->
-                    drawCircle(Color(0xFFFF1744), 4.dp.toPx(), Offset(centerX, y(outlier)))
+                    drawCircle(PaletteLime, 4.dp.toPx(), Offset(centerX, y(outlier)))
                 }
             }
 
@@ -221,13 +222,13 @@ private fun StatLabel(
             text = title,
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
-            color = if (isAccent) Color(0xFFFFAB00) else MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isAccent) PaletteLime else MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = "${formatValue(value)} $unit",
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isAccent) Color(0xFFFFAB00) else MaterialTheme.colorScheme.primary
+            color = if (isAccent) PaletteLime else MaterialTheme.colorScheme.primary
         )
     }
 }

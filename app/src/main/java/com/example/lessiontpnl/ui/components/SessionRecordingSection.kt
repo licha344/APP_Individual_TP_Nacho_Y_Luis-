@@ -46,6 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lessiontpnl.domain.model.FatigueRiskThresholds
 import com.example.lessiontpnl.domain.model.FatigueSession
+import com.example.lessiontpnl.ui.theme.PaletteDeepPurple
+import com.example.lessiontpnl.ui.theme.PaletteLime
+import com.example.lessiontpnl.ui.theme.PaletteMutedPurple
+import com.example.lessiontpnl.ui.theme.PalettePurple
 
 /**
  * Sección simplificada de registro de fatiga muscular (Mínima y Máxima) en tiempo real
@@ -70,7 +74,7 @@ fun SessionRecordingSection(
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.dp,
-            if (session.isActive) Color(0xFFFF1744) else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+            if (session.isActive) PaletteLime else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -103,10 +107,10 @@ fun SessionRecordingSection(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (session.isActive) Color(0xFF5C0003) else MaterialTheme.colorScheme.primaryContainer,
+                        color = if (session.isActive) PalettePurple else MaterialTheme.colorScheme.primaryContainer,
                         border = BorderStroke(
                             1.dp,
-                            if (session.isActive) Color(0xFFFF5252) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            if (session.isActive) PaletteLime else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     ) {
                         Row(
@@ -115,7 +119,7 @@ fun SessionRecordingSection(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = if (session.isActive) Color(0xFFFF1744) else Color(0xFF78909C),
+                                color = if (session.isActive) PaletteLime else PaletteMutedPurple,
                                 modifier = Modifier.size(8.dp)
                             ) {}
                             Spacer(modifier = Modifier.width(6.dp))
@@ -127,7 +131,7 @@ fun SessionRecordingSection(
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (session.isActive) Color(0xFFFF8A80) else MaterialTheme.colorScheme.primary
+                                color = PaletteLime
                             )
                         }
                     }
@@ -153,7 +157,7 @@ fun SessionRecordingSection(
                         ExtremesCard(
                             title = "Fatiga Mínima",
                             valueText = session.minPercent?.let { "$it %" } ?: "N/D",
-                            accentColor = Color(0xFF00E676),
+                            accentColor = PaletteLime,
                             modifier = Modifier.fillMaxWidth()
                         )
                         ExtremesCard(
@@ -165,7 +169,7 @@ fun SessionRecordingSection(
                         ExtremesCard(
                             title = "Fatiga Máxima",
                             valueText = session.maxPercent?.let { "$it %" } ?: "N/D",
-                            accentColor = Color(0xFFFF1744),
+                            accentColor = PaletteLime,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -174,7 +178,7 @@ fun SessionRecordingSection(
                         ExtremesCard(
                             title = "Fatiga Mínima",
                             valueText = session.minPercent?.let { "$it %" } ?: "N/D",
-                            accentColor = Color(0xFF00E676),
+                            accentColor = PaletteLime,
                             modifier = Modifier.weight(1f)
                         )
                         ExtremesCard(
@@ -186,7 +190,7 @@ fun SessionRecordingSection(
                         ExtremesCard(
                             title = "Fatiga Máxima",
                             valueText = session.maxPercent?.let { "$it %" } ?: "N/D",
-                            accentColor = Color(0xFFFF1744),
+                            accentColor = PaletteLime,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -241,8 +245,8 @@ fun SessionRecordingSection(
                         onClick = onStopSession,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF1744),
-                            contentColor = Color.White
+                            containerColor = PaletteLime,
+                            contentColor = PaletteDeepPurple
                         )
                     ) {
                         Icon(imageVector = Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -286,7 +290,7 @@ fun SessionRecordingSection(
                         onResetSession()
                     }
                 ) {
-                    Text(text = "Reiniciar", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+                    Text(text = "Reiniciar", color = PaletteLime, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

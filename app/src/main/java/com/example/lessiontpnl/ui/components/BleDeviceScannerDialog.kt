@@ -36,12 +36,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lessiontpnl.domain.model.BleDiscoveredDevice
 import com.example.lessiontpnl.domain.model.ConnectionState
+import com.example.lessiontpnl.ui.theme.PaletteDeepPurple
+import com.example.lessiontpnl.ui.theme.PaletteLime
+import com.example.lessiontpnl.ui.theme.PalettePurple
 
 @Composable
 fun BleDeviceScannerDialog(
@@ -168,7 +170,7 @@ private fun DeviceItem(
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
             1.dp,
-            if (isConnected) Color(0xFF00E676) else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            if (isConnected) PaletteLime else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -185,7 +187,7 @@ private fun DeviceItem(
                 Icon(
                     imageVector = Icons.Default.Bluetooth,
                     contentDescription = null,
-                    tint = if (isConnected) Color(0xFF00E676) else MaterialTheme.colorScheme.primary,
+                    tint = if (isConnected) PaletteLime else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -227,13 +229,13 @@ private fun DeviceItem(
                     modifier = Modifier.height(32.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = when {
-                            isConnected -> Color(0xFF00E676)
-                            isConnecting -> Color(0xFFFFAB00)
+                            isConnected -> PaletteLime
+                            isConnecting -> PalettePurple
                             else -> MaterialTheme.colorScheme.primary
                         },
                         contentColor = when {
-                            isConnected -> Color(0xFF00202B)
-                            isConnecting -> Color(0xFF381E00)
+                            isConnected -> PaletteDeepPurple
+                            isConnecting -> PaletteLime
                             else -> MaterialTheme.colorScheme.onPrimary
                         }
                     )

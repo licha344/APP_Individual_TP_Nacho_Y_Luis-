@@ -1,14 +1,13 @@
 package com.example.lessiontpnl.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 /**
- * Esquema de Color Neón Azul y Negro.
+ * Esquema global de la paleta LessionTPNL.
  */
-private val NeonDarkColorScheme = darkColorScheme(
+private val PaletteColorScheme = darkColorScheme(
     primary = NeonPrimary,
     onPrimary = NeonOnPrimary,
     primaryContainer = NeonPrimaryContainer,
@@ -19,6 +18,8 @@ private val NeonDarkColorScheme = darkColorScheme(
     onSecondaryContainer = NeonOnSecondaryContainer,
     tertiary = NeonTertiary,
     onTertiary = NeonOnTertiary,
+    tertiaryContainer = NeonTertiaryContainer,
+    onTertiaryContainer = NeonOnTertiaryContainer,
     error = NeonError,
     onError = NeonOnError,
     errorContainer = NeonErrorContainer,
@@ -29,17 +30,19 @@ private val NeonDarkColorScheme = darkColorScheme(
     onSurface = NeonOnSurface,
     surfaceVariant = NeonSurfaceVariant,
     onSurfaceVariant = NeonOnSurfaceVariant,
-    outline = NeonOutline
+    outline = NeonOutline,
+    inverseSurface = NeonOnBackground,
+    inverseOnSurface = NeonBackground,
+    inversePrimary = NeonSecondary,
+    surfaceTint = NeonPrimary
 )
 
 @Composable
 fun LessionTPNLTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    // Aplicar el tema oscuro Neón Azul y Negro como el tema principal estilizado
     MaterialTheme(
-        colorScheme = NeonDarkColorScheme,
+        colorScheme = PaletteColorScheme,
         typography = Typography,
         content = content
     )

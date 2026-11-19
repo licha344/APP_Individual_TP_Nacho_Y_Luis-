@@ -1,6 +1,6 @@
 # LessionTPNL
 
-**Versión: 0.1.2**
+**Versión: 0.2.3**
 
 Aplicación Android para monitorear la activación muscular mediante un sensor EMG conectado a una placa ESP32 por Bluetooth Low Energy (BLE). También incluye un simulador para probar la aplicación sin hardware.
 
@@ -13,6 +13,7 @@ Aplicación Android para monitorear la activación muscular mediante un sensor E
 - Permite simular mediciones, registrar sesiones y consultar el historial local.
 - Exporta las mediciones y sesiones a un archivo CSV.
 - Grafica la evolución de las métricas EMG y muestra las presiones sistólica y diastólica como series separadas.
+- Actualiza la interfaz con el logo de la aplicación, tipografía Arial y una paleta de colores unificada.
 
 ## Requisitos
 
@@ -62,6 +63,14 @@ La aplicación calcula las métricas EMG a partir de la lectura ADC, reensambla 
 - Android Bluetooth GATT.
 - Coroutines y StateFlow.
 - Persistencia local y pruebas unitarias JVM.
+
+## Logo
+
+El logo se guarda en `app/src/main/res/drawable-nodpi/logo_lessiontpnl.png`. Se muestra en la barra superior de `MainScreen` y se utiliza como primer plano del icono adaptable de la aplicación mediante `app/src/main/res/drawable/ic_launcher_foreground.xml`. En la interfaz se escala conservando su proporción para adaptarse a distintos anchos de pantalla.
+
+La paleta global está centralizada en `ui/theme/Color.kt` y se aplica desde `ui/theme/Theme.kt`, incluidos los colores de las barras del sistema.
+
+La tipografía Arial se configura globalmente en `ui/theme/Type.kt`. La paleta de la interfaz es `#DDEA42`, `#2C146C`, `#6B6457`, `#70649D`, `#47396B`, `#9484B4`, `#848C4C` y `#8C84B4`.
 
 ## Nota
 

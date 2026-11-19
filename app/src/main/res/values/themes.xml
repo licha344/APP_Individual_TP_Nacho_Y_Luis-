@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.LessionTPNL" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.LessionTPNL" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorAccent">@color/palette_lime</item>
+        <item name="android:colorPrimary">@color/palette_deep_purple</item>
+        <item name="android:colorPrimaryDark">@color/palette_deep_purple</item>
+        <item name="android:statusBarColor">@color/palette_deep_purple</item>
+        <item name="android:navigationBarColor">@color/palette_deep_purple</item>
+        <item name="android:windowBackground">@color/palette_deep_purple</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>

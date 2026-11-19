@@ -34,13 +34,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.lessiontpnl.domain.model.MetricType
+import com.example.lessiontpnl.ui.theme.PaletteLime
+import com.example.lessiontpnl.ui.theme.PalettePurple
+import com.example.lessiontpnl.ui.theme.PaletteTaupe
 import com.example.lessiontpnl.ui.viewmodel.MetricDisplayInfo
 
 @Composable
@@ -59,28 +61,20 @@ fun MetricCard(
         MetricType.BLOOD_PRESSURE -> Icons.Default.Compress
     }
 
-    val iconColor: Color = when (displayInfo.type) {
-        MetricType.MUSCLE_FATIGUE -> Color(0xFFD500F9) // Magenta Neón
-        MetricType.EMG_RAW -> Color(0xFF00E5FF) // Cian Neón
-        MetricType.EMG_PEAK -> Color(0xFF00E676) // Verde Neón
-        MetricType.HEART_RATE -> Color(0xFFFF1744) // Rojo Neón
-        MetricType.BODY_TEMPERATURE -> Color(0xFFFF9100) // Naranja Neón
-        MetricType.BLOOD_PRESSURE -> Color(0xFF29B6F6)
+    val iconColor = MaterialTheme.colorScheme.primary
+
+    val statusBadgeColor = when {
+        displayInfo.isAvailable -> PalettePurple
+        else -> MaterialTheme.colorScheme.background
     }
 
-    val statusBadgeColor: Color = when {
-        displayInfo.isError -> Color(0xFF5C0003)
-        displayInfo.isAvailable -> Color(0xFF003822)
-        else -> Color(0xFF1E2A3A)
-    }
+    val statusTextColor = PaletteLime
 
-    val statusTextColor: Color = when {
-        displayInfo.isError -> Color(0xFFFF5252)
-        displayInfo.isAvailable -> Color(0xFF00E676)
-        else -> Color(0xFF90A4AE)
+    val cardBorderColor = when {
+        displayInfo.isAvailable -> iconColor.copy(alpha = 0.4f)
+        displayInfo.isError -> PaletteTaupe
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     }
-
-    val cardBorderColor = if (displayInfo.isAvailable) iconColor.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
 
     Card(
         modifier = modifier
