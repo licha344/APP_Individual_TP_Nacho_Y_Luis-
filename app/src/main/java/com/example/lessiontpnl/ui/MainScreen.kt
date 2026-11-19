@@ -171,7 +171,7 @@ fun MainScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Monitoreo Físico de Entrenamiento",
+                                text = "Lession",
                                 modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,

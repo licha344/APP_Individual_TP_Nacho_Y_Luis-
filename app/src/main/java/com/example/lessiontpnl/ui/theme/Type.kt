@@ -7,13 +7,23 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-private val ArialFontFamily = FontFamily(Typeface.create("Arial", Typeface.NORMAL))
+/**
+ * Familia tipográfica Arial con fallback automático a SansSerif del sistema Android.
+ */
+val ArialFontFamily: FontFamily = try {
+    FontFamily(Typeface.create("Arial", Typeface.NORMAL))
+} catch (_: Exception) {
+    FontFamily.SansSerif
+}
 
-private fun TextStyle.withArial() = copy(fontFamily = ArialFontFamily)
+private fun TextStyle.withArial(): TextStyle = this.copy(fontFamily = ArialFontFamily)
 
 private val DefaultTypography = Typography()
 
-// Keep Material's existing sizes and weights while applying one font family globally.
+/**
+ * Configuración global de la tipografía Arial en Material3 para toda la aplicación LessionTPNL.
+ * Conserva intactos los tamaños, pesos (Bold, Medium, Normal, ExtraBold) y espaciados originales.
+ */
 val Typography = DefaultTypography.copy(
     displayLarge = DefaultTypography.displayLarge.withArial(),
     displayMedium = DefaultTypography.displayMedium.withArial(),
